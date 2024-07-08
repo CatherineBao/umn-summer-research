@@ -30,7 +30,7 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a):
-    isDiagnosis = askGipity("If the provided item is a type of disease return true with no other commentary else return false in all lowercase", a)
+    isDiagnosis = askGipity("If the provided item is a specific unique type of disease return true with no other commentary else return false in all lowercase", a)
     return isDiagnosis == "true"
 
 def get_random(number, question, answer):
@@ -48,13 +48,14 @@ def get_random(number, question, answer):
     return valid_pairs
 
 def run_accuracy_test(answers, responses):
-    system_prompt = """You will be given a ground truth answer and a response to a medical question. 
-                        Compared to the ground truth answer, determine if the response is accurate or 
-                        inaccurate. Respond only with accurate or inaccurate. Do not explain your 
-                        reasoning. The response is accurate if the correct diagnosis is provided
-                        in the answer."""
     results = []
     for answer, response in zip(answers, responses):
+        system_prompt = f"""Given {answer} is the correct diagnosis for the user. Does the response mention 
+            the correct diagnosis? Respond accurate or inaccurate.
+            Compared to the answer, determine if the response is accurate or 
+            inaccurate. Respond only with accurate or inaccurate. Do not explain your 
+            reasoning. The response is accurate if the correct diagnosis is provided anywhere
+            in the answer."""
         user_prompt = f"Ground truth answer: {answer}. Response: {response}"
         result = askGipity(system_prompt, user_prompt)
         results.append(result)
