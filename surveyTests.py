@@ -29,9 +29,9 @@ def read_data():
 def extract_column(df, column):
     return df[column].tolist()
 
-def get_random(number, data):
+def get_random(number, question, answer):
     random.seed(100)
-    return random.choices(data, k=number)
+    return zip(random.choices(question, k=number), random.choices(answer, k = number))
 
 def run_accuracy_test(answers, responses):
     system_prompt = """You will be given a ground truth answer and a response to a medical question. 
@@ -103,8 +103,10 @@ def questionWithSurvey(casualPhrasing, answers):
 
 def main():
     df = read_data()
-    questions = get_random(20, extract_column(df, "question"))
-    answers = get_random(20, extract_column(df, "answer"))
+    diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
+
+    questions = [item[0] for item in diagnosisSet]
+    answers = [item[1] for item in diagnosisSet]
 
     with ThreadPoolExecutor() as executor:
         casualPhrasing = list(executor.map(
