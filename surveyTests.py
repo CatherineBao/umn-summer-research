@@ -29,10 +29,23 @@ def read_data():
 def extract_column(df, column):
     return df[column].tolist()
 
+def is_diagnosis_related(a):
+    isDiagnosis = askGipity("If the provided item is a type of disease return true with no other commentary else return false in all lowercase", a)
+    return isDiagnosis == "true"
+
 def get_random(number, question, answer):
     random.seed(100)
-    indices = random.sample(range(len(question)), number)
-    return [(question[i], answer[i]) for i in indices]
+    valid_pairs = []
+    indices = list(range(len(question)))
+
+    while len(valid_pairs) < number:
+        sampled_index = random.sample(indices, 1)[0]
+        q, a = question[sampled_index], answer[sampled_index]
+        if is_diagnosis_related(a):
+            valid_pairs.append((q, a))
+        indices.remove(sampled_index)
+
+    return valid_pairs
 
 def run_accuracy_test(answers, responses):
     system_prompt = """You will be given a ground truth answer and a response to a medical question. 
