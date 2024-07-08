@@ -29,19 +29,22 @@ def read_data():
 def extract_column(df, column):
     return df[column].tolist()
 
-def is_diagnosis_related(a):
-    isDiagnosis = askGipity("If the provided item is a specific unique type of disease return true with no other commentary else return false in all lowercase. Return false if it is a symptom of diseases rather than the disease itself. Return false if the question references an image.", a)
+def is_diagnosis_related(a, q):
+    isDiagnosis = askGipity("""If the queston asked by the user is asking for a specfic diagnosis by providing 
+                            a list of symtpoms return true with no other commentary otherwise return false in all lowercase.
+                            Return false if the answer is a symptom of a disease rather than the disease itself. Return
+                            false if the question references an image. """, "question"+ a + "answer:" + q)
     return isDiagnosis == "true"
 
 def get_random(number, question, answer):
-    random.seed(10)
+    random.seed(25)
     valid_pairs = []
     indices = list(range(len(question)))
 
     while len(valid_pairs) < number:
         sampled_index = random.sample(indices, 1)[0]
         q, a = question[sampled_index], answer[sampled_index]
-        if is_diagnosis_related(a):
+        if is_diagnosis_related(a, q):
             valid_pairs.append((q, a))
         indices.remove(sampled_index)
 
