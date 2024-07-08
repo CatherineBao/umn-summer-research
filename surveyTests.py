@@ -185,6 +185,9 @@ def main():
     questions = [item[0] for item in diagnosisSet]
     answers = [item[1] for item in diagnosisSet]
 
+    casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
+    questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
+
     with ThreadPoolExecutor() as executor:
         defaultAnswer = list(executor.map(
                         lambda q: askGipity("Address the inquiry provided by the user", q), questions
@@ -193,9 +196,6 @@ def main():
         print("Default Score: " + str(getScore(scoreDefult)))
 
     with ThreadPoolExecutor() as executor:
-        casualPhrasing_futures = {executor.submit(askGipity, "Rephrase this question so that it is simular to that of the general public (simular to reddit posts) in a first person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q): q for q in questions}
-        casualPhrasing = [future.result() for future in as_completed(casualPhrasing_futures)]
-
         ogWithSystem_futures = {executor.submit(systemDiagnosis, phrasing): phrasing for phrasing in casualPhrasing}
         ogWithSystem = [future.result() for future in as_completed(ogWithSystem_futures)]
         scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
@@ -205,20 +205,20 @@ def main():
         originalAnswer = [future.result() for future in as_completed(originalAnswer_futures)]
         scoreOG = run_accuracy_test(answers, originalAnswer)
         print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
-
-    questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
     
     with ThreadPoolExecutor() as executor:
-        answerWithSurvey_futures = {executor.submit(askGipity, "Address the inquiry provided by the user", phrasing): phrasing for phrasing in questionWithSurveyResult}
-        answerWithSurvey = [future.result() for future in as_completed(answerWithSurvey_futures)]
+        answerWithSurvey = list(executor.map(
+                        lambda q: askGipity("Address the inquiry provided by the user", q), questionWithSurveyResult
+                        ))
         scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
         print("Original Score With Survey: " + str(getScore(scoreSurvey)))
 
     with ThreadPoolExecutor() as executor:
-        surveyAndSystem_futures = {executor.submit(systemDiagnosis, phrasing): phrasing for phrasing in questionWithSurveyResult}
-        surveyAndSystem = [future.result() for future in as_completed(surveyAndSystem_futures)]
+        surveyAndSystem = list(executor.map(
+                        lambda q: systemDiagnosis(q), questionWithSurveyResult
+                        ))
         scoreSurveyAndSystem = run_accuracy_test(answers, surveyAndSystem)
-        print("System Score With Survey: " + str(getScore(scoreOG)))
+        print("System Score With Survey: " + str(getScore(scoreSurveyAndSystem)))
     
     data = {
         "question": questions,
