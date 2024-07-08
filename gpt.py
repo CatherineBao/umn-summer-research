@@ -1,7 +1,10 @@
 import random
 import pandas as pd
 from openai import OpenAI
-from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 """
@@ -65,7 +68,7 @@ def make_csv(df, filename):
     df.to_csv(filename, index = False)
 
 def query_GPT_without_system_role(user_prompt):
-    client = OpenAI()
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     model = "gpt-4o"
     prompt = [{"role": "user", "content": user_prompt}]
     response = client.chat.completions.create(model = model, messages = prompt)
