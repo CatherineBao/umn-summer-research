@@ -15,7 +15,8 @@ def askGipity(system, user):
     prompt = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     response = openai.chat.completions.create(
         model=model,
-        messages=prompt
+        messages=prompt,
+        temperature = 0.3 
     )
     return response.choices[0].message.content
 
@@ -29,11 +30,11 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a):
-    isDiagnosis = askGipity("If the provided item is a specific unique type of disease return true with no other commentary else return false in all lowercase. Return false if it is a symptom of diseases rather than the disease itself.", a)
+    isDiagnosis = askGipity("If the provided item is a specific unique type of disease return true with no other commentary else return false in all lowercase. Return false if it is a symptom of diseases rather than the disease itself. Return false if the question references an image.", a)
     return isDiagnosis == "true"
 
 def get_random(number, question, answer):
-    random.seed(100)
+    random.seed(10)
     valid_pairs = []
     indices = list(range(len(question)))
 
@@ -52,7 +53,7 @@ def run_accuracy_test(answers, responses):
         system_prompt = f"""Given {answer} is the correct diagnosis for the user. Does the response mention 
             the correct or simular diagnosis? Respond accurate or inaccurate.
             Compared to the answer, determine if the response is accurate or 
-            inaccurate. A correct but not exact answer would be if Invasive lobular carcinoma is 
+            inaccurate. An example of a correct but not exact answer would be if Invasive lobular carcinoma is 
             the correct diagnosis and the response mentions breast cancer.
             Respond only with accurate or inaccurate. Do not explain your 
             reasoning. The response is accurate if the correct diagnosis is provided anywhere
