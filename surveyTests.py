@@ -116,6 +116,9 @@ def questionWithSurvey(casualPhrasing, answers):
     
     return [question + survey for question, survey in zip(casualPhrasing, surveyAnswers)]
 
+def insert_newlines(text, every=50):
+    return '\n'.join([text[i:i+every] for i in range(0, len(text), every)])
+
 def main():
     df = read_data()
     diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
@@ -147,12 +150,12 @@ def main():
     print(getScore(scoreOG), getScore(scoreSurvey))
 
     data = {
-        "question": questions,
-        "answer": answers,
-        "generalPublicQuestion": casualPhrasing,
-        "generalPublicAnswerOG": originalAnswer,
+        "question": [insert_newlines(q) for q in questions],
+        "answer": [insert_newlines(a) for a in answers],
+        "generalPublicQuestion": [insert_newlines(cq) for cq in casualPhrasing],
+        "generalPublicAnswerOG": [insert_newlines(oa) for oa in originalAnswer],
         "OGscore": scoreOG,
-        "surveyAnswer": answerWithSurvey,
+        "surveyAnswer": [insert_newlines(sa) for sa in answerWithSurvey],
         "surveyScore": scoreSurvey
     }
 
