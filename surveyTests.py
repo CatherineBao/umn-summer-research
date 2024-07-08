@@ -3,20 +3,23 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 import random
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 
 load_dotenv()
 
 api_key = os.getenv('OPENAI_API_KEY')
 openai.api_key = api_key
 
+@lru_cache(maxsize=128)
 def askGipity(system, user):
-    model = "gpt-4"
+    model = "gpt-3.5-turbo"
     prompt = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     response = openai.chat.completions.create(
         model=model,
         messages=prompt,
-        temperature = 0.3 
+        temperature=0.3,
+        max_tokens=150  
     )
     return response.choices[0].message.content
 
@@ -32,8 +35,9 @@ def extract_column(df, column):
 def is_diagnosis_related(a, q):
     isDiagnosis = askGipity("""If the queston asked by the user is asking for a specfic diagnosis by providing 
                             a list of symtpoms return true with no other commentary otherwise return false in all lowercase.
-                            Return false if the answer is a symptom of a disease rather than the disease itself. Return
-                            false if the question references an image. """, "question"+ a + "answer:" + q)
+                            Return false if the answer is a symptom of a disease rather than the disease itself or the answer
+                            is not a valid disease that can be diagnosed at all. Return false if the question references an image. 
+                            Return false if the answer is not a disease at all. """, "question"+ a + "answer:" + q)
     return isDiagnosis == "true"
 
 def get_random(number, question, answer):
