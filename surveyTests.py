@@ -31,7 +31,8 @@ def extract_column(df, column):
 
 def get_random(number, question, answer):
     random.seed(100)
-    return zip(random.choices(question, k=number), random.choices(answer, k = number))
+    indices = random.sample(range(len(question)), number)
+    return [(question[i], answer[i]) for i in indices]
 
 def run_accuracy_test(answers, responses):
     system_prompt = """You will be given a ground truth answer and a response to a medical question. 
