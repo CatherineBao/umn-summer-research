@@ -101,10 +101,6 @@ def questionWithSurvey(casualPhrasing, answers):
     
     return [question + survey for question, survey in zip(casualPhrasing, surveyAnswers)]
 
-def accuracyTest(correctAnswer, answer):
-    accuracyResults = run_accuracy_test(correctAnswer, answer)
-    return getScore(accuracyResults)
-
 def main():
     df = read_data()
     questions = get_random(20, extract_column(df, "question"))
@@ -129,9 +125,9 @@ def main():
             questionWithSurveyResult
         ))
 
-    scoreOG = accuracyTest(answers, originalAnswer)
-    scoreSurvey = accuracyTest(answers, answerWithSurvey)
-    print(scoreOG, scoreSurvey)
+    scoreOG = run_accuracy_test(answers, originalAnswer)
+    scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
+    print(getScore(scoreOG), getScore(scoreSurvey))
 
     data = {
         "question": questions,
