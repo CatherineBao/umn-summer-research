@@ -3,9 +3,8 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 import random
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Load environment variables
 load_dotenv()
 
 api_key = os.getenv('OPENAI_API_KEY')
@@ -51,9 +50,11 @@ def run_accuracy_test(answers, responses):
     results = []
     for answer, response in zip(answers, responses):
         system_prompt = f"""Given {answer} is the correct diagnosis for the user. Does the response mention 
-            the correct diagnosis? Respond accurate or inaccurate.
+            the correct or simular diagnosis? Respond accurate or inaccurate.
             Compared to the answer, determine if the response is accurate or 
-            inaccurate. Respond only with accurate or inaccurate. Do not explain your 
+            inaccurate. A correct but not exact answer would be if Invasive lobular carcinoma is 
+            the correct diagnosis and the response mentions breast cancer.
+            Respond only with accurate or inaccurate. Do not explain your 
             reasoning. The response is accurate if the correct diagnosis is provided anywhere
             in the answer."""
         user_prompt = f"Ground truth answer: {answer}. Response: {response}"
@@ -95,8 +96,8 @@ def questionWithSurvey(casualPhrasing, answers):
         """, 
     question) for question in casualPhrasing]
 
-    surveyAnswers = [askGipity(f"""
-        Answer the Additional Information Section with common symptoms of {answer}. Answer in a casual tone used by the general public, do not include details that a patient would only know through medical tests or a doctor's visit.
+    surveyAnswers = [askGipity(
+        f"""Answer the Additional Information Section with common symptoms of {answer}. Answer in a casual tone used by the general public, do not include details that a patient would only know through medical tests or a doctor's visit.
         Formatting: Include the Original Prompt in the answer returned
         Example: 
         Q: Additional Information:
@@ -116,8 +117,66 @@ def questionWithSurvey(casualPhrasing, answers):
     
     return [question + survey for question, survey in zip(casualPhrasing, surveyAnswers)]
 
-def insert_newlines(text, every=50):
-    return '\n'.join([text[i:i+every] for i in range(0, len(text), every)])
+def systemDiagnosis(question):
+    systemMessage = """If enough specific information is provided from the user, please provide the following information:\n
+        1. Provide the most likely diagnosis relating to the user's symptoms. (IMPORTANT)\n
+        2. Provide other alternative diagnosis possibilities \n
+        3. Provide steps and options to treat the symptoms moving forward including first-aid/home treatment plans and recommending a specialist (include what kind of doctor they should visit)\n
+        4. Provide links and websites to other sources where more information about the most likely diagnosis can be found\n
+        5. Ask for any follow-up questions involving the user's condition (IMPORTANT)\n
+        6. Provide more information as needed such as possible medicine options and treatment and safety considerations or other points relevant to the user's question with links to specific pages\n
+        \n
+        Formatting Instruction: (Use ^ to seperate the sections)\n
+        Diagnosis - Diagnosis Title \n
+        Information\n^
+        Title:\n
+        Information\n^
+        Title:\n
+        Information\n^
+        ...\n
+        \n
+        Example (Refer to the example provided below for formatting and content): \n
+        Q: \n
+        28M, 168lbs, 6'0. Since last year I've noticed that my body doesn't seem to be healing from injuries that are more than skin deep. I developed a herniated disc two months ago, in November I seemed to have sprained my foot and hand or at least I'm guessing they're sprains based on how I got those injuries((it's been 7 months and they have barely improved). Two weeks ago I developed some kind of swelling behind my knee. I read online that the swelling could be a Baker's Cyst, caused by a knee injury or arthritis(I think it might be an injury from standing on my knee once). I haven't exercised since March to try and give my disc time to recover(not much improvement) so it isn't exercise that could have caused the cyst. Any ideas of what could be the underlying problem?
+        Additional Information:\n
+        Age: No\n
+        Medical History: I have diabetes and I had my appendix out when I was 9\n
+        Occupation: I'm a teacher, and I constantly have to bend over and pick up the chalk that children throw at me.\n
+        Family History: Not that I know of\n
+        Pain and Function: I am not able to bend over as much\n
+        A: \n
+        Diagnosis - Symptoms caused by Diabetes:\n
+        Considering your history of injuries that are not healing properly, along with the development of a herniated disc, foot and hand sprains, and swelling behind your knee, there may be an underlying issue affecting your body's healing capability. One possible explanation for your prolonged recovery and multiple injuries could be related to a systemic condition such as diabetes. Diabetes can impact the body's ability to heal wounds and injuries efficiently, leading to delayed healing and increased susceptibility to injuries.\n
+        \n^
+        Other Possible Considerations:\n
+        Nutritional Deficiencies: Lack of certain vitamins and minerals, such as Vitamin D, calcium, magnesium, and Vitamin C, can impair the body’s ability to heal properly.\n
+        Chronic Inflammation: Conditions like chronic inflammation can slow down the healing process. This can be due to autoimmune disorders, chronic infections, or even lifestyle factors such as diet and stress.\n
+        Circulatory Issues: Poor circulation can affect healing, as it reduces the supply of necessary nutrients and oxygen to injured areas. Conditions like diabetes or vascular diseases can contribute to this.\n
+        Hormonal Imbalances: Hormones play a crucial role in tissue repair. Imbalances in thyroid hormones, cortisol, or testosterone can impair healing.\n
+        Infection: Sometimes, an infection in the injured area can cause persistent pain and swelling, preventing proper healing.\n
+        \n^
+        Home-Treatments:\n
+        1. Manage blood sugar levels: Ensure you are actively monitoring and managing your blood sugar levels through proper diet, regular exercise (if approved by your healthcare provider), and any prescribed medications.\n
+        2. Support wound healing: Focus on maintaining good wound care practices for any open injuries or wounds to prevent infections and facilitate healing.\n
+        3. Modify activities: Consider adjusting your teaching duties to minimize bending over and lifting heavy objects to reduce strain on your body and allow for better recovery.\n
+        \n^
+        Moving Forward:\n
+        Given your history of diabetes and the issues with slow healing and multiple injuries, it is crucial to seek medical evaluation to address these concerns. Proper management of diabetes and appropriate treatment for your current injuries are essential to prevent further complications.\n
+        Warning signs to watch out for:\n
+        Sudden Energy Crash: Be alert to a sudden drop in energy, which could indicate an underlying issue that needs immediate attention.\n
+        Mental Health Changes: Any changes in mood, such as irritability, anxiety, or depression, should be addressed promptly.\n
+        Physical Symptoms: New symptoms like palpitations, dizziness, or significant changes in vision or cognition should be evaluated by a healthcare provider immediately.\n
+        \n^
+        Recommendation for Specialist:\n
+        Consulting with a healthcare provider, preferably a primary care physician or an orthopedic specialist, would be beneficial for a comprehensive evaluation of your musculoskeletal issues and consideration of your diabetes. Additionally, you may benefit from a referral to a podiatrist for the foot injury and a rheumatologist to assess the swelling behind your knee in case it is related to arthritis.\n
+        \n^
+        Additional Notes:\n
+        If you require assistance in finding affordable healthcare options, consider reaching out to local clinics, community health centers, or healthcare assistance programs such as...\n
+        \n^
+        For more information on diabetes and wound healing, you can visit the American Diabetes Association website: https:/ \n
+        Do you have any additional questions about your condition?
+        """
+    return askGipity(systemMessage, question)
 
 def main():
     df = read_data()
@@ -127,36 +186,55 @@ def main():
     answers = [item[1] for item in diagnosisSet]
 
     with ThreadPoolExecutor() as executor:
-        casualPhrasing = list(executor.map(
-            lambda q: askGipity("Rephrase this question so that it is simular to that of the general public (simular to reddit posts) in a first person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q), 
-            questions
-        ))
+        defaultAnswer = list(executor.map(
+                        lambda q: askGipity("Address the inquiry provided by the user", q), questions
+                        ))
+        scoreDefult = run_accuracy_test(answers, defaultAnswer)
+        print("Default Score: " + str(getScore(scoreDefult)))
 
-        originalAnswer = list(executor.map(
-            lambda q: askGipity("Address the inquiry provided by the user", q),
-            casualPhrasing
-        ))
+    with ThreadPoolExecutor() as executor:
+        casualPhrasing_futures = {executor.submit(askGipity, "Rephrase this question so that it is simular to that of the general public (simular to reddit posts) in a first person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q): q for q in questions}
+        casualPhrasing = [future.result() for future in as_completed(casualPhrasing_futures)]
+
+        ogWithSystem_futures = {executor.submit(systemDiagnosis, phrasing): phrasing for phrasing in casualPhrasing}
+        ogWithSystem = [future.result() for future in as_completed(ogWithSystem_futures)]
+        scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
+        print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
+
+        originalAnswer_futures = {executor.submit(askGipity, "Address the inquiry provided by the user", phrasing): phrasing for phrasing in casualPhrasing}
+        originalAnswer = [future.result() for future in as_completed(originalAnswer_futures)]
+        scoreOG = run_accuracy_test(answers, originalAnswer)
+        print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
 
     questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
     
     with ThreadPoolExecutor() as executor:
-        answerWithSurvey = list(executor.map(
-            lambda q: askGipity("Address the inquiry provided by the user", q), 
-            questionWithSurveyResult
-        ))
+        answerWithSurvey_futures = {executor.submit(askGipity, "Address the inquiry provided by the user", phrasing): phrasing for phrasing in questionWithSurveyResult}
+        answerWithSurvey = [future.result() for future in as_completed(answerWithSurvey_futures)]
+        scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
+        print("Original Score With Survey: " + str(getScore(scoreSurvey)))
 
-    scoreOG = run_accuracy_test(answers, originalAnswer)
-    scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
-    print(getScore(scoreOG), getScore(scoreSurvey))
-
+    with ThreadPoolExecutor() as executor:
+        surveyAndSystem_futures = {executor.submit(systemDiagnosis, phrasing): phrasing for phrasing in questionWithSurveyResult}
+        surveyAndSystem = [future.result() for future in as_completed(surveyAndSystem_futures)]
+        scoreSurveyAndSystem = run_accuracy_test(answers, surveyAndSystem)
+        print("System Score With Survey: " + str(getScore(scoreOG)))
+    
     data = {
-        "question": [insert_newlines(q) for q in questions],
-        "answer": [insert_newlines(a) for a in answers],
-        "generalPublicQuestion": [insert_newlines(cq) for cq in casualPhrasing],
-        "generalPublicAnswerOG": [insert_newlines(oa) for oa in originalAnswer],
+        "question": questions,
+        "answer": answers,
+        "generalPublicQuestion": casualPhrasing,
+        "surveyQuestions": questionWithSurveyResult,
+        "defaultAnswer": defaultAnswer,
+        "defaultScore": scoreDefult,
+        "generalPublicAnswerOG": originalAnswer,
         "OGscore": scoreOG,
-        "surveyAnswer": [insert_newlines(sa) for sa in answerWithSurvey],
-        "surveyScore": scoreSurvey
+        "surveyAnswer": answerWithSurvey,
+        "surveyScore": scoreSurvey,
+        "surveyAndSystemAnswer": surveyAndSystem,
+        "surveyAndSystemScore": scoreSurveyAndSystem,
+        "ogWithSystemAnswer": ogWithSystem,
+        "scoreOGWithSystem": scoreOGWithSystem,
     }
 
     df_output = pd.DataFrame(data)
