@@ -29,7 +29,7 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a):
-    isDiagnosis = askGipity("If the provided item is a specific unique type of disease return true with no other commentary else return false in all lowercase", a)
+    isDiagnosis = askGipity("If the provided item is a specific unique type of disease return true with no other commentary else return false in all lowercase. Return false if it is a symptom of diseases rather than the disease itself.", a)
     return isDiagnosis == "true"
 
 def get_random(number, question, answer):
@@ -126,13 +126,13 @@ def systemDiagnosis(question):
         5. Ask for any follow-up questions involving the user's condition (IMPORTANT)\n
         6. Provide more information as needed such as possible medicine options and treatment and safety considerations or other points relevant to the user's question with links to specific pages\n
         \n
-        Formatting Instruction: (Use ^ to seperate the sections)\n
+        Formatting Instruction:\n
         Diagnosis - Diagnosis Title \n
-        Information\n^
+        Information\n
         Title:\n
-        Information\n^
+        Information\n
         Title:\n
-        Information\n^
+        Information\n
         ...\n
         \n
         Example (Refer to the example provided below for formatting and content): \n
@@ -147,32 +147,32 @@ def systemDiagnosis(question):
         A: \n
         Diagnosis - Symptoms caused by Diabetes:\n
         Considering your history of injuries that are not healing properly, along with the development of a herniated disc, foot and hand sprains, and swelling behind your knee, there may be an underlying issue affecting your body's healing capability. One possible explanation for your prolonged recovery and multiple injuries could be related to a systemic condition such as diabetes. Diabetes can impact the body's ability to heal wounds and injuries efficiently, leading to delayed healing and increased susceptibility to injuries.\n
-        \n^
+        \n
         Other Possible Considerations:\n
         Nutritional Deficiencies: Lack of certain vitamins and minerals, such as Vitamin D, calcium, magnesium, and Vitamin C, can impair the body’s ability to heal properly.\n
         Chronic Inflammation: Conditions like chronic inflammation can slow down the healing process. This can be due to autoimmune disorders, chronic infections, or even lifestyle factors such as diet and stress.\n
         Circulatory Issues: Poor circulation can affect healing, as it reduces the supply of necessary nutrients and oxygen to injured areas. Conditions like diabetes or vascular diseases can contribute to this.\n
         Hormonal Imbalances: Hormones play a crucial role in tissue repair. Imbalances in thyroid hormones, cortisol, or testosterone can impair healing.\n
         Infection: Sometimes, an infection in the injured area can cause persistent pain and swelling, preventing proper healing.\n
-        \n^
+        \n
         Home-Treatments:\n
         1. Manage blood sugar levels: Ensure you are actively monitoring and managing your blood sugar levels through proper diet, regular exercise (if approved by your healthcare provider), and any prescribed medications.\n
         2. Support wound healing: Focus on maintaining good wound care practices for any open injuries or wounds to prevent infections and facilitate healing.\n
         3. Modify activities: Consider adjusting your teaching duties to minimize bending over and lifting heavy objects to reduce strain on your body and allow for better recovery.\n
-        \n^
+        \n
         Moving Forward:\n
         Given your history of diabetes and the issues with slow healing and multiple injuries, it is crucial to seek medical evaluation to address these concerns. Proper management of diabetes and appropriate treatment for your current injuries are essential to prevent further complications.\n
         Warning signs to watch out for:\n
         Sudden Energy Crash: Be alert to a sudden drop in energy, which could indicate an underlying issue that needs immediate attention.\n
         Mental Health Changes: Any changes in mood, such as irritability, anxiety, or depression, should be addressed promptly.\n
         Physical Symptoms: New symptoms like palpitations, dizziness, or significant changes in vision or cognition should be evaluated by a healthcare provider immediately.\n
-        \n^
+        \n
         Recommendation for Specialist:\n
         Consulting with a healthcare provider, preferably a primary care physician or an orthopedic specialist, would be beneficial for a comprehensive evaluation of your musculoskeletal issues and consideration of your diabetes. Additionally, you may benefit from a referral to a podiatrist for the foot injury and a rheumatologist to assess the swelling behind your knee in case it is related to arthritis.\n
-        \n^
+        \n
         Additional Notes:\n
         If you require assistance in finding affordable healthcare options, consider reaching out to local clinics, community health centers, or healthcare assistance programs such as...\n
-        \n^
+        \n
         For more information on diabetes and wound healing, you can visit the American Diabetes Association website: https:/ \n
         Do you have any additional questions about your condition?
         """
