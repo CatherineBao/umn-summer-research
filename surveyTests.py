@@ -186,7 +186,9 @@ def main():
     answers = [item[1] for item in diagnosisSet]
 
     casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
+    print("All questions have successfully converted to casual phrasing!")
     questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
+    print("All questions have successfully been processed with additional information!")
 
     with ThreadPoolExecutor() as executor:
         defaultAnswer = list(executor.map(
@@ -196,16 +198,20 @@ def main():
         print("Default Score: " + str(getScore(scoreDefult)))
 
     with ThreadPoolExecutor() as executor:
-        ogWithSystem_futures = {executor.submit(systemDiagnosis, phrasing): phrasing for phrasing in casualPhrasing}
-        ogWithSystem = [future.result() for future in as_completed(ogWithSystem_futures)]
-        scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
-        print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
-
-        originalAnswer_futures = {executor.submit(askGipity, "Address the inquiry provided by the user", phrasing): phrasing for phrasing in casualPhrasing}
-        originalAnswer = [future.result() for future in as_completed(originalAnswer_futures)]
+        originalAnswer = list(executor.map(
+                        lambda q: askGipity("Address the inquiry provided by the user", q), casualPhrasing
+                        ))
         scoreOG = run_accuracy_test(answers, originalAnswer)
         print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
     
+
+    with ThreadPoolExecutor() as executor:
+        ogWithSystem = list(executor.map(
+                        lambda q: systemDiagnosis(q), casualPhrasing
+                        ))
+        scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
+        print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
+
     with ThreadPoolExecutor() as executor:
         answerWithSurvey = list(executor.map(
                         lambda q: askGipity("Address the inquiry provided by the user", q), questionWithSurveyResult
@@ -229,12 +235,12 @@ def main():
         "defaultScore": scoreDefult,
         "generalPublicAnswerOG": originalAnswer,
         "OGscore": scoreOG,
+        "ogWithSystemAnswer": ogWithSystem,
+        "scoreOGWithSystem": scoreOGWithSystem,
         "surveyAnswer": answerWithSurvey,
         "surveyScore": scoreSurvey,
         "surveyAndSystemAnswer": surveyAndSystem,
         "surveyAndSystemScore": scoreSurveyAndSystem,
-        "ogWithSystemAnswer": ogWithSystem,
-        "scoreOGWithSystem": scoreOGWithSystem,
     }
 
     df_output = pd.DataFrame(data)
