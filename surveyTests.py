@@ -31,9 +31,9 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a, q):
-    isDiagnosis = askGipity(f"""Return true only of the answer is a type of disease. Return false otherwise. Return false if the question references images.""", 
-                            "question"+ q + "answer:" + a)
-    return isDiagnosis == "true"
+    isDiagnosis = askGipity(f"""is this a type of illness/disease true or false explain your reasoning before answering""", 
+                            a)
+    return "true" in isDiagnosis.lower()
 
 def get_random(number, question, answer):
     random.seed(25)
@@ -45,6 +45,7 @@ def get_random(number, question, answer):
         q, a = question[sampled_index], answer[sampled_index]
         if is_diagnosis_related(a, q):
             valid_pairs.append((q, a))
+            print(len(valid_pairs))
         indices.remove(sampled_index)
 
     return valid_pairs
@@ -186,6 +187,16 @@ def main():
     diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
     questions = [item[0] for item in diagnosisSet]
     answers = [item[1] for item in diagnosisSet]
+
+    data = {
+        "question": questions,
+        "answer": answers,
+    }
+
+    df_output = pd.DataFrame(data)
+    df_output.to_csv("testResults.csv", index=False)
+
+    return
 
     casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
     print("All questions have successfully converted to casual phrasing!")
