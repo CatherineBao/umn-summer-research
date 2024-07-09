@@ -31,10 +31,10 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a, q):
-    isDiagnosis = askGipity(f"""if {q} is asking for a specific disease diagnosis for the user AND 
-                            {a} is a specific type of disease return true with no other commentary 
+    isDiagnosis = askGipity(f"""if the question is asking for a specific disease diagnosis for the user AND 
+                            the asnwer is a specific type of disease return true with no other commentary 
                             otherwise return false in all lowercase. Return false if the question references images.""", 
-                            "question"+ a + "answer:" + q)
+                            "question"+ q + "answer:" + a)
     return isDiagnosis == "true"
 
 def get_random(number, question, answer):
