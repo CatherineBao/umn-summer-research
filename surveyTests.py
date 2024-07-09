@@ -31,8 +31,8 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a, q):
-    isDiagnosis = askGipity(f"""is this a type of illness/disease true or false explain your reasoning before answering""", 
-                            a)
+    isDiagnosis = askGipity(f"""Answer the true or false questions""", 
+                            "is this a type of illness/disease not a symptom, diagnosis process, treatment process, or medicine true or false explain: " + a)
     return "true" in isDiagnosis.lower()
 
 def get_random(number, question, answer):
