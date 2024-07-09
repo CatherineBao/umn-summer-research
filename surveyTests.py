@@ -189,15 +189,6 @@ def main():
     questions = [item[0] for item in diagnosisSet]
     answers = [item[1] for item in diagnosisSet]
 
-    data = {
-        "question": questions,
-        "answer": answers,
-    }
-
-    df_output = pd.DataFrame(data)
-    df_output.to_csv("testResults.csv", index=False)
-    return 
-
     casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
     print("All questions have successfully converted to casual phrasing!")
     questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
