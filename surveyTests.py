@@ -207,7 +207,15 @@ def main():
             questions.append(row['question'])
             answers.append(row['answer'])
 
-    casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
+    reddit_example_1 = "5 month old male, approx 16lbs. Possible milk allergy and GERD. Waiting on an allergist appointment in early July. Last night my 5 month old was asleep next to me in the bed around 8p, suddenly he started bringing his legs up to belly and arms perpendicular to body in like spams with 1-2 second pauses between each spasm. It last maybe 5-6 spasms and then he woke with hiccups immediately after stopping the spasms. He was acting normal afterwards. I messaged his pedi but haven’t heard back yet. I then was rocking him to sleep approx 10pm and he was doing this weird things with eyes and tightening his body for around 3 minutes before he finally fell asleep. I recorded it and have added link. I’m just not sure if this is being an overly anxious mom or if this is something that needs immediate attention. Thank you for all your help!"
+    reddit_example_2 = "39yo female. 5’5” 135lb. I am experiencing jaw pain only on the left side. It started when my toddler son accidentally slammed his head into it two weeks ago. It was more jarring than painful when it happened. It’s only gotten worse instead of better. It’s not a constant pain but it’s hard to open my mouth all the way to eat. I’m also a stomach sleeper and it’s uncomfortable to sleep on my left side. My question is - what’s the best type of doctor to see for this? Thanks!"
+    reddit_example_3 = "im 16F, 56kg was doing 120kg leg press at the gym earlier which is not a top set for me. at the bottom of my rep my hip stung a bit so i stopped after that rep. The outside of my right leg then went cold. Its 4 hours later and now it stings and the outside of my leg has gone completely numb. Like i cant feel it at all. Wtf is this. Can i still train legs??"
+    casualPhrasing = [askGipity(f"""
+                                You are translating professional medical questions into medical questions asked by the general public. 
+                                Here are some examples of the type of questions asked by the general public. Exclude all information that
+                                a user would need to visit a doctor to know (lab and test results). First example:  
+                                {reddit_example_1} Second example: {reddit_example_2} Third example: {reddit_example_3}"""
+                                , q) for q in questions]
     print("All questions have successfully converted to casual phrasing!")
 
     data = {
