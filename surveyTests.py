@@ -11,7 +11,6 @@ load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 openai.api_key = api_key
 
-@lru_cache(maxsize=128)
 def askGipity(system, user):
     model = "gpt-3.5-turbo"
     prompt = [{"role": "system", "content": system}, {"role": "user", "content": user}]
@@ -19,7 +18,6 @@ def askGipity(system, user):
         model=model,
         messages=prompt,
         temperature=0.3,
-        max_tokens=150  
     )
     return response.choices[0].message.content
 
