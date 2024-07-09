@@ -5,6 +5,8 @@ import pandas as pd
 import random
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+import csv
+
 
 load_dotenv()
 
@@ -183,23 +185,41 @@ def systemDiagnosis(question):
     return askGipity(systemMessage, question)
 
 def main():
-    df = read_data()
-    diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
-    questions = [item[0] for item in diagnosisSet]
-    answers = [item[1] for item in diagnosisSet]
+    # df = read_data()
+    # diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
+    # questions = [item[0] for item in diagnosisSet]
+    # answers = [item[1] for item in diagnosisSet]
+
+    # data = {
+    #     "question": questions,
+    #     "answer": answers,
+    # }
+
+    # df_output = pd.DataFrame(data)
+    # df_output.to_csv("testResults.csv", index=False)
+
+    questions = []
+    answers = []
+
+    with open('seed25.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            questions.append(row['question'])
+            answers.append(row['answer'])
+
+    casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
+    print("All questions have successfully converted to casual phrasing!")
 
     data = {
         "question": questions,
         "answer": answers,
+        "generalPublicQuestion": casualPhrasing,
     }
 
     df_output = pd.DataFrame(data)
     df_output.to_csv("testResults.csv", index=False)
-
+    
     return
-
-    casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
-    print("All questions have successfully converted to casual phrasing!")
     questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
     print("All questions have successfully been processed with additional information!")
 
