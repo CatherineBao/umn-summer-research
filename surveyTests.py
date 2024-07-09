@@ -31,8 +31,8 @@ def extract_column(df, column):
     return df[column].tolist()
 
 def is_diagnosis_related(a, q):
-    isDiagnosis = askGipity(f"""if {q} is asking for a specific diagnosis for the user after listing symptoms and 
-                            {a} is a type of disease (not a symptom of a disease) return true with no other commentary 
+    isDiagnosis = askGipity(f"""if {q} is asking for a specific disease diagnosis for the user AND 
+                            {a} is a specific type of disease return true with no other commentary 
                             otherwise return false in all lowercase. Return false if the question references images.""", 
                             "question"+ a + "answer:" + q)
     return isDiagnosis == "true"
@@ -186,9 +186,17 @@ def systemDiagnosis(question):
 def main():
     df = read_data()
     diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
-
     questions = [item[0] for item in diagnosisSet]
     answers = [item[1] for item in diagnosisSet]
+
+    data = {
+        "question": questions,
+        "answer": answers,
+    }
+
+    df_output = pd.DataFrame(data)
+    df_output.to_csv("testResults.csv", index=False)
+    return 
 
     casualPhrasing = [askGipity("Rephrase this question so that it is similar to that of the general public (similar to Reddit posts) in a first-person point of view but exclude any information that the general public wouldn't have without going to a doctor for tests.", q) for q in questions]
     print("All questions have successfully converted to casual phrasing!")
