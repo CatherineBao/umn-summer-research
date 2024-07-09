@@ -211,8 +211,8 @@ def main():
     reddit_example_2 = "39yo female. 5’5” 135lb. I am experiencing jaw pain only on the left side. It started when my toddler son accidentally slammed his head into it two weeks ago. It was more jarring than painful when it happened. It’s only gotten worse instead of better. It’s not a constant pain but it’s hard to open my mouth all the way to eat. I’m also a stomach sleeper and it’s uncomfortable to sleep on my left side. My question is - what’s the best type of doctor to see for this? Thanks!"
     reddit_example_3 = "im 16F, 56kg was doing 120kg leg press at the gym earlier which is not a top set for me. at the bottom of my rep my hip stung a bit so i stopped after that rep. The outside of my right leg then went cold. Its 4 hours later and now it stings and the outside of my leg has gone completely numb. Like i cant feel it at all. Wtf is this. Can i still train legs??"
     casualPhrasing = [askGipity(f"""
-                                Rewrite the questions to match the tone of the general public. Exclude all information that
-                                a user would need to visit a doctor to know (lab and test results). First example:  
+                                Rewrite the questions to a first person persepctive simular to r/ docs on reddit. Exclude all information that
+                                a user would need to visit a doctor to know (lab and test results). Write it simularily to these examples: First example:  
                                 {reddit_example_1} Second example: {reddit_example_2} Third example: {reddit_example_3}"""
                                 , q) for q in questions]
     print("All questions have successfully converted to casual phrasing!")
