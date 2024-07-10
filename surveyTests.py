@@ -220,19 +220,9 @@ def main():
 
     casualPhrasingReprocessing = [askGipity(f"""
                                     Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message.
-                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message." + q) for q in casualPhrasing]
+                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible." + q) for q in casualPhrasing]
 
-    data = {
-        "question": questions,
-        "answer": answers,
-        "generalPublicQuestion": casualPhrasingReprocessing,
-    }
-
-    df_output = pd.DataFrame(data)
-    df_output.to_csv("testResults.csv", index=False)
-    
-    return
-    questionWithSurveyResult = questionWithSurvey(casualPhrasing, answers)
+    questionWithSurveyResult = questionWithSurvey(casualPhrasingReprocessing, answers)
     print("All questions have successfully been processed with additional information!")
 
     with ThreadPoolExecutor() as executor:
