@@ -219,9 +219,8 @@ def main():
     print("All questions have successfully converted to casual phrasing!")
 
     casualPhrasingReprocessing = [askGipity(f"""
-                                    Simplify the medical terminology to that of a middle school writing level. Also remove all numbers from the message such as
-                                    results from lab testing, blood pressure, pulse, respirations, etc. 
-                                """, q) for q in casualPhrasing]
+                                    Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message.
+                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message." + q) for q in casualPhrasing]
 
     data = {
         "question": questions,
