@@ -103,8 +103,8 @@ def questionWithSurvey(casualPhrasing, answers):
     question) for question in casualPhrasing]
 
     surveyAnswers = [askGipity(
-        f"""Answer the Additional Information Section with common symptoms of {answer}. Answer in a casual tone used by the general public, do not include details that a patient would only know through medical tests or a doctor's visit.
-        Formatting: Include the Original Prompt in the answer returned
+        f"""Answer the survey using commong symptoms of {answer}. Do not include details that you wouldn't know without visitng a doctor. Use first person.
+        Use the example below for formatting and don’t include any additional commentary or formatting outside of specifications and remove any notes:
         Example: 
         Q: Additional Information:
         Is the redness spreading or forming a red streak? Can you describe the appearance of the redness?: 
@@ -184,6 +184,24 @@ def systemDiagnosis(question):
         """
     return askGipity(systemMessage, question)
 
+def convertToCasualTone(questions):
+        reddit_example_1 = "5 month old male, approx 16lbs. Possible milk allergy and GERD. Waiting on an allergist appointment in early July. Last night my 5 month old was asleep next to me in the bed around 8p, suddenly he started bringing his legs up to belly and arms perpendicular to body in like spams with 1-2 second pauses between each spasm. It last maybe 5-6 spasms and then he woke with hiccups immediately after stopping the spasms. He was acting normal afterwards. I messaged his pedi but haven’t heard back yet. I then was rocking him to sleep approx 10pm and he was doing this weird things with eyes and tightening his body for around 3 minutes before he finally fell asleep. I recorded it and have added link. I’m just not sure if this is being an overly anxious mom or if this is something that needs immediate attention. Thank you for all your help!"
+        reddit_example_2 = "39yo female. 5’5” 135lb. I am experiencing jaw pain only on the left side. It started when my toddler son accidentally slammed his head into it two weeks ago. It was more jarring than painful when it happened. It’s only gotten worse instead of better. It’s not a constant pain but it’s hard to open my mouth all the way to eat. I’m also a stomach sleeper and it’s uncomfortable to sleep on my left side. My question is - what’s the best type of doctor to see for this? Thanks!"
+        reddit_example_3 = "im 16F, 56kg was doing 120kg leg press at the gym earlier which is not a top set for me. at the bottom of my rep my hip stung a bit so i stopped after that rep. The outside of my right leg then went cold. Its 4 hours later and now it stings and the outside of my leg has gone completely numb. Like i cant feel it at all. Wtf is this. Can i still train legs??"
+        casualPhrasing = [askGipity(f"""
+                                Remove all information that a person would need to visit a doctor to know (lab values, test results, 
+                                blood pressure, pulse, respirations, oxygen saturation). Rewrite the questions to a first person persepctive 
+                                simular to r/ docs on reddit at a middle school reading level. Write it simularily to these examples: First example:  
+                                {reddit_example_1} Second example: {reddit_example_2} Third example: {reddit_example_3}"""
+                                , q) for q in questions]
+
+        casualPhrasingReprocessing = [askGipity(f"""
+                                    Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message.
+                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible and rewrite at a middle school reading level." + q) for q in casualPhrasing]
+        print("All questions have successfully converted to casual phrasing!")
+        return casualPhrasingReprocessing
+
+
 def main():
     # df = read_data()
     # diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
@@ -200,41 +218,21 @@ def main():
 
     questions = []
     answers = []
+    casualTone = []
+    questionWithSurveyResult = []
 
     with open('seed25.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             questions.append(row['question'])
             answers.append(row['answer'])
+            casualTone.append(row['generalPublicQuestion'])
+            questionWithSurveyResult.append(row['surveyQuestions'])
+    
+    #casualTone = convertToCasualTone(questions)
 
-    reddit_example_1 = "5 month old male, approx 16lbs. Possible milk allergy and GERD. Waiting on an allergist appointment in early July. Last night my 5 month old was asleep next to me in the bed around 8p, suddenly he started bringing his legs up to belly and arms perpendicular to body in like spams with 1-2 second pauses between each spasm. It last maybe 5-6 spasms and then he woke with hiccups immediately after stopping the spasms. He was acting normal afterwards. I messaged his pedi but haven’t heard back yet. I then was rocking him to sleep approx 10pm and he was doing this weird things with eyes and tightening his body for around 3 minutes before he finally fell asleep. I recorded it and have added link. I’m just not sure if this is being an overly anxious mom or if this is something that needs immediate attention. Thank you for all your help!"
-    reddit_example_2 = "39yo female. 5’5” 135lb. I am experiencing jaw pain only on the left side. It started when my toddler son accidentally slammed his head into it two weeks ago. It was more jarring than painful when it happened. It’s only gotten worse instead of better. It’s not a constant pain but it’s hard to open my mouth all the way to eat. I’m also a stomach sleeper and it’s uncomfortable to sleep on my left side. My question is - what’s the best type of doctor to see for this? Thanks!"
-    reddit_example_3 = "im 16F, 56kg was doing 120kg leg press at the gym earlier which is not a top set for me. at the bottom of my rep my hip stung a bit so i stopped after that rep. The outside of my right leg then went cold. Its 4 hours later and now it stings and the outside of my leg has gone completely numb. Like i cant feel it at all. Wtf is this. Can i still train legs??"
-    casualPhrasing = [askGipity(f"""
-                                Remove all information that a person would need to visit a doctor to know (lab values, test results, 
-                                blood pressure, pulse, respirations, oxygen saturation). Rewrite the questions to a first person persepctive 
-                                simular to r/ docs on reddit. Write it simularily to these examples: First example:  
-                                {reddit_example_1} Second example: {reddit_example_2} Third example: {reddit_example_3}"""
-                                , q) for q in questions]
-    print("All questions have successfully converted to casual phrasing!")
-
-    casualPhrasingReprocessing = [askGipity(f"""
-                                    Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message.
-                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible." + q) for q in casualPhrasing]
-
-    questionWithSurveyResult = questionWithSurvey(casualPhrasingReprocessing, answers)
+    #questionWithSurveyResult = questionWithSurvey(casualTone, answers)
     print("All questions have successfully been processed with additional information!")
-
-    data = {
-        "question": questions,
-        "answer": answers,
-        "generalPublicQuestion": casualPhrasing,
-    }
-
-    df_output = pd.DataFrame(data)
-    df_output.to_csv("testResults.csv", index=False)
-
-    return
 
     with ThreadPoolExecutor() as executor:
         defaultAnswer = list(executor.map(
@@ -245,7 +243,7 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         originalAnswer = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q), casualPhrasing
+                        lambda q: askGipity("Address the inquiry provided by the user", q), casualTone
                         ))
         scoreOG = run_accuracy_test(answers, originalAnswer)
         print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
@@ -253,7 +251,7 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         ogWithSystem = list(executor.map(
-                        lambda q: systemDiagnosis(q), casualPhrasing
+                        lambda q: systemDiagnosis(q), casualTone
                         ))
         scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
         print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
@@ -275,7 +273,7 @@ def main():
     data = {
         "question": questions,
         "answer": answers,
-        "generalPublicQuestion": casualPhrasing,
+        "generalPublicQuestion": casualTone,
         "surveyQuestions": questionWithSurveyResult,
         "defaultAnswer": defaultAnswer,
         "defaultScore": scoreDefult,
