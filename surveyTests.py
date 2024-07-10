@@ -225,6 +225,17 @@ def main():
     questionWithSurveyResult = questionWithSurvey(casualPhrasingReprocessing, answers)
     print("All questions have successfully been processed with additional information!")
 
+    data = {
+        "question": questions,
+        "answer": answers,
+        "generalPublicQuestion": casualPhrasing,
+    }
+
+    df_output = pd.DataFrame(data)
+    df_output.to_csv("testResults.csv", index=False)
+
+    return
+
     with ThreadPoolExecutor() as executor:
         defaultAnswer = list(executor.map(
                         lambda q: askGipity("Address the inquiry provided by the user", q), questions
