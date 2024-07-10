@@ -218,10 +218,15 @@ def main():
                                 , q) for q in questions]
     print("All questions have successfully converted to casual phrasing!")
 
+    casualPhrasingReprocessing = [askGipity(f"""
+                                    Simplify the medical terminology to that of a middle school writing level. Also remove all numbers from the message such as
+                                    results from lab testing, blood pressure, pulse, respirations, etc. 
+                                """, q) for q in casualPhrasing]
+
     data = {
         "question": questions,
         "answer": answers,
-        "generalPublicQuestion": casualPhrasing,
+        "generalPublicQuestion": casualPhrasingReprocessing,
     }
 
     df_output = pd.DataFrame(data)
