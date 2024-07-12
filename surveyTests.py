@@ -38,7 +38,7 @@ def is_diagnosis_related(a, q):
     return "true" in isDiagnosis.lower()
 
 def get_random(number, question, answer):
-    random.seed(35)
+    random.seed(45)
     valid_pairs = []
     indices = list(range(len(question)))
 
