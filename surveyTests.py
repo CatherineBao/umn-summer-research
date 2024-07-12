@@ -55,15 +55,16 @@ def get_random(number, question, answer):
 def run_accuracy_test(answers, responses):
     results = []
     for answer, response in zip(answers, responses):
-        system_prompt = f"""Given {answer} is the correct diagnosis for the user. Does the response mention 
+        system_prompt = f"""Respond with only Accurate or Inaccurate"""
+        user_prompt = f"""Given {answer} is the correct diagnosis for the user. Does the response mention 
             the correct or simular diagnosis? Respond accurate or inaccurate.
             Compared to the answer, determine if the response is accurate or 
             inaccurate. An example of a correct but not exact answer would be if Invasive lobular carcinoma is 
             the correct diagnosis and the response mentions breast cancer.
             Respond only with accurate or inaccurate. Do not explain your 
             reasoning. The response is accurate if the correct diagnosis is provided anywhere
-            in the answer."""
-        user_prompt = f"Ground truth answer: {answer}. Response: {response}"
+            in the answer.
+            {response}"""
         result = askGipity(system_prompt, user_prompt)
         results.append(result)
     return results
@@ -220,6 +221,12 @@ def main():
     answers = []
     casualTone = []
     questionWithSurveyResult = []
+    defaultAnswer = []
+    originalAnswer = []
+    ogWithSystem = []
+    surveyAndSystem = []
+    answerWithSurvey = []
+    
 
     with open('seed25.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -228,6 +235,11 @@ def main():
             answers.append(row['answer'])
             casualTone.append(row['generalPublicQuestion'])
             questionWithSurveyResult.append(row['surveyQuestions'])
+            defaultAnswer.append(row['defaultAnswer'])
+            originalAnswer.append(row['generalPublicAnswerOG'])
+            ogWithSystem.append(row['ogWithSystemAnswer'])
+            answerWithSurvey.append(row['surveyAnswer'])
+            surveyAndSystem.append(row["surveyAndSystemAnswer"])
     
     #casualTone = convertToCasualTone(questions)
 
@@ -235,38 +247,38 @@ def main():
     print("All questions have successfully been processed with additional information!")
 
     with ThreadPoolExecutor() as executor:
-        defaultAnswer = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q), questions
-                        ))
+        #defaultAnswer = list(executor.map(
+                        # lambda q: askGipity("Address the inquiry provided by the user", q), questions
+                        # ))
         scoreDefult = run_accuracy_test(answers, defaultAnswer)
         print("Default Score: " + str(getScore(scoreDefult)))
 
     with ThreadPoolExecutor() as executor:
-        originalAnswer = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q), casualTone
-                        ))
+        #originalAnswer = list(executor.map(
+                        # lambda q: askGipity("Address the inquiry provided by the user", q), casualTone
+                        # ))
         scoreOG = run_accuracy_test(answers, originalAnswer)
         print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
     
 
     with ThreadPoolExecutor() as executor:
-        ogWithSystem = list(executor.map(
-                        lambda q: systemDiagnosis(q), casualTone
-                        ))
+        #ogWithSystem = list(executor.map(
+                        # lambda q: systemDiagnosis(q), casualTone
+                        # ))
         scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
         print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
 
     with ThreadPoolExecutor() as executor:
-        answerWithSurvey = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q), questionWithSurveyResult
-                        ))
+        #answerWithSurvey = list(executor.map(
+                        # lambda q: askGipity("Address the inquiry provided by the user", q), questionWithSurveyResult
+                        # ))
         scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
         print("Original Score With Survey: " + str(getScore(scoreSurvey)))
 
     with ThreadPoolExecutor() as executor:
-        surveyAndSystem = list(executor.map(
-                        lambda q: systemDiagnosis(q), questionWithSurveyResult
-                        ))
+        #surveyAndSystem = list(executor.map(
+                        # lambda q: systemDiagnosis(q), questionWithSurveyResult
+                        # ))
         scoreSurveyAndSystem = run_accuracy_test(answers, surveyAndSystem)
         print("System Score With Survey: " + str(getScore(scoreSurveyAndSystem)))
     
@@ -291,4 +303,5 @@ def main():
     df_output.to_csv("testResults.csv", index=False)
 
 if __name__ == "__main__":
+
     main()
