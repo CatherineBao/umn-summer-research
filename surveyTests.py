@@ -59,10 +59,10 @@ def run_accuracy_test(answers, responses):
         user_prompt = f"""Given {answer} is the correct diagnosis. Does the response 
         below mention the disease anywhere in the response? An example of an accurate 
         answer is if the correct diagnosis is invasive lobular carcinoma (a type of breast cancer) but the response mentions 
-        breast cancer. A correct answer can be provided anywhere in the response.  
+        breast cancer. A correct answer can be provided anywhere in the response, consider the Other Possible Considerations.  
 
         Response: {response}"""
-        result = askGipity(system_prompt, user_prompt, "gpt-4o")
+        result = askGipity(system_prompt, user_prompt, "gpt-3.5-turbo")
         results.append(result)
     return results
 
