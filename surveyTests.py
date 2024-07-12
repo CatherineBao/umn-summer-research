@@ -55,7 +55,7 @@ def get_random(number, question, answer):
 def run_accuracy_test(answers, responses):
     results = []
     for answer, response in zip(answers, responses):
-        system_prompt = f"""Respond with only Accurate or Inaccurate"""
+        system_prompt = f"""Answer the question"""
         user_prompt = f"""Given {answer} is the correct diagnosis. Does the response 
         below mention the disease or an adjacent disease anywhere in the response? Explain your 
         reasoning and then respond with accurate or inaccurate. An example of an adjacent answer that 
@@ -67,8 +67,8 @@ def run_accuracy_test(answers, responses):
     return results
 
 def getScore(accuracyResults):
-    totalScore = sum(1 for result in accuracyResults if "accurate" in result.lower())
-    return totalScore / len(accuracyResults)
+    totalScore = sum(1 for result in accuracyResults if "inaccurate" in result.lower())
+    return 1 - (totalScore / len(accuracyResults))
 
 def questionWithSurvey(casualPhrasing, answers):
     surveyQuestions = [askGipity(
