@@ -38,7 +38,7 @@ def is_diagnosis_related(a, q):
     return "true" in isDiagnosis.lower()
 
 def get_random(number, question, answer):
-    random.seed(25)
+    random.seed(35)
     valid_pairs = []
     indices = list(range(len(question)))
 
@@ -56,12 +56,10 @@ def run_accuracy_test(answers, responses):
     results = []
     for answer, response in zip(answers, responses):
         system_prompt = f"""Return accurate or inaccuate with no additional commentary."""
-        user_prompt = f"""Given {answer} is the correct diagnosis. Does the response 
-        below mention the disease anywhere in the response? An example of an accurate 
-        answer is if the correct diagnosis is invasive lobular carcinoma (a type of breast cancer) but the response mentions 
-        breast cancer. A correct answer can be provided anywhere in the response, consider the Other Possible Considerations.  
-
-        Response: {response}"""
+        user_prompt = f"""Given {answer} is the correct diagnosis. Does the response below mention the disease or an adjacent answer (Lipohyalinosis is the correct answer and stroke is provided, Dissociative Amnesia is the correct answer and Stress-Related Memory Issue is provided) anywhere in the response? 
+                    A vague answer is incorrect. 
+                    A correct answer can be provided anywhere in the response.  
+                    Response: {response}"""
         result = askGipity(system_prompt, user_prompt, "gpt-3.5-turbo")
         results.append(result)
     return results
@@ -70,7 +68,7 @@ def getScore(accuracyResults):
     totalScore = sum(1 for result in accuracyResults if "Accurate" == result)
     return totalScore / len(accuracyResults)
 
-def questionWithSurvey(casualPhrasing, answers):
+def questionWithSurvey(casualPhrasing, answers, questions):
     surveyQuestions = [askGipity(
         """ Create a list of additional information, questions, or symptoms that a doctor will ask to create a more accurate diagnosis. These should cover age, gender, race, other symptoms, and relevant details.
 
@@ -101,7 +99,7 @@ def questionWithSurvey(casualPhrasing, answers):
     question, "gpt-3.5-turbo") for question in casualPhrasing]
 
     surveyAnswers = [askGipity(
-        f"""Answer the survey using commong symptoms of {answer}. Do not include details that you wouldn't know without visitng a doctor. Use first person.
+        f"""Answer the survey using commong symptoms of {answer} using the information from {ogquestion}. Do not include details that you wouldn't know without visitng a doctor. Use first person.
         Use the example below for formatting and don’t include any additional commentary or formatting outside of specifications and remove any notes:
         Example: 
         Q: Additional Information:
@@ -117,16 +115,15 @@ def questionWithSurvey(casualPhrasing, answers):
         Is there any pus forming around or oozing from the wound?: No
         Do you have swollen lymph nodes in the neck, armpit, or groin?: No
         Do you have a fever or other new developments to note?: No
-        """, question, "gpt-3.5-turbo") for question, answer in zip(surveyQuestions, answers)]
+        """, question, "gpt-3.5-turbo") for question, answer, ogquestion in zip(surveyQuestions, answers, questions)]
     
     return [question + survey for question, survey in zip(casualPhrasing, surveyAnswers)]
 
 def systemDiagnosis(question):
     systemMessage = """If enough specific information is provided from the user, please provide the following information:\n
         1. Provide the most likely diagnosis relating to the user's symptoms. (IMPORTANT)\n
-        2. Provide other alternative diagnosis possibilities \n
+        2. Provide other alternative diagnosis possibilities (3-5 alternative diagnosis) \n
         3. Provide steps and options to treat the symptoms moving forward including first-aid/home treatment plans and recommending a specialist (include what kind of doctor they should visit)\n
-        4. Provide links and websites to other sources where more information about the most likely diagnosis can be found\n
         5. Ask for any follow-up questions involving the user's condition (IMPORTANT)\n
         6. Provide more information as needed such as possible medicine options and treatment and safety considerations or other points relevant to the user's question with links to specific pages\n
         \n
@@ -177,7 +174,6 @@ def systemDiagnosis(question):
         Additional Notes:\n
         If you require assistance in finding affordable healthcare options, consider reaching out to local clinics, community health centers, or healthcare assistance programs such as...\n
         \n
-        For more information on diabetes and wound healing, you can visit the American Diabetes Association website: https:/ \n
         Do you have any additional questions about your condition?
         """
     return askGipity(systemMessage, question, "gpt-3.5-turbo")
@@ -201,10 +197,10 @@ def convertToCasualTone(questions):
 
 
 def main():
-    # df = read_data()
-    # diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
-    # questions = [item[0] for item in diagnosisSet]
-    # answers = [item[1] for item in diagnosisSet]
+    df = read_data()
+    diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
+    questions = [item[0] for item in diagnosisSet]
+    answers = [item[1] for item in diagnosisSet]
 
     # data = {
     #     "question": questions,
@@ -214,68 +210,68 @@ def main():
     # df_output = pd.DataFrame(data)
     # df_output.to_csv("testResults.csv", index=False)
 
-    questions = []
-    answers = []
-    casualTone = []
-    questionWithSurveyResult = []
-    defaultAnswer = []
-    originalAnswer = []
-    ogWithSystem = []
-    surveyAndSystem = []
-    answerWithSurvey = []
+    # questions = []
+    # answers = []
+    # casualTone = []
+    # questionWithSurveyResult = []
+    # defaultAnswer = []
+    # originalAnswer = []
+    # ogWithSystem = []
+    # surveyAndSystem = []
+    # answerWithSurvey = []
     
 
-    with open('seed25.csv', newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            questions.append(row['question'])
-            answers.append(row['answer'])
-            casualTone.append(row['generalPublicQuestion'])
-            questionWithSurveyResult.append(row['surveyQuestions'])
-            defaultAnswer.append(row['defaultAnswer'])
-            originalAnswer.append(row['generalPublicAnswerOG'])
-            ogWithSystem.append(row['ogWithSystemAnswer'])
-            answerWithSurvey.append(row['surveyAnswer'])
-            surveyAndSystem.append(row["surveyAndSystemAnswer"])
+    # with open('seed25.csv', newline='', encoding='utf-8') as csvfile:
+    #     reader = csv.DictReader(csvfile)
+    #     for row in reader:
+    #         questions.append(row['question'])
+    #         answers.append(row['answer'])
+    #         casualTone.append(row['generalPublicQuestion'])
+    #         questionWithSurveyResult.append(row['surveyQuestions'])
+    #         defaultAnswer.append(row['defaultAnswer'])
+    #         originalAnswer.append(row['generalPublicAnswerOG'])
+    #         ogWithSystem.append(row['ogWithSystemAnswer'])
+    #         answerWithSurvey.append(row['surveyAnswer'])
+    #         surveyAndSystem.append(row["surveyAndSystemAnswer"])
     
-    #casualTone = convertToCasualTone(questions)
+    casualTone = convertToCasualTone(questions)
 
-    #questionWithSurveyResult = questionWithSurvey(casualTone, answers)
+    questionWithSurveyResult = questionWithSurvey(casualTone, answers, questions)
     print("All questions have successfully been processed with additional information!")
 
     with ThreadPoolExecutor() as executor:
-        #defaultAnswer = list(executor.map(
-                        # lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questions
-                        # ))
+        defaultAnswer = list(executor.map(
+                        lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questions
+                        ))
         scoreDefult = run_accuracy_test(answers, defaultAnswer)
         print("Default Score: " + str(getScore(scoreDefult)))
 
     with ThreadPoolExecutor() as executor:
-        #originalAnswer = list(executor.map(
-                        # lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), casualTone
-                        # ))
+        originalAnswer = list(executor.map(
+                        lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), casualTone
+                        ))
         scoreOG = run_accuracy_test(answers, originalAnswer)
         print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
     
 
     with ThreadPoolExecutor() as executor:
-        #ogWithSystem = list(executor.map(
-                        # lambda q: systemDiagnosis(q), casualTone
-                        # ))
+        ogWithSystem = list(executor.map(
+                        lambda q: systemDiagnosis(q), casualTone
+                        ))
         scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
         print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
 
     with ThreadPoolExecutor() as executor:
-        #answerWithSurvey = list(executor.map(
-                        # lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questionWithSurveyResult
-                        # ))
+        answerWithSurvey = list(executor.map(
+                        lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questionWithSurveyResult
+                        ))
         scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
         print("Original Score With Survey: " + str(getScore(scoreSurvey)))
 
     with ThreadPoolExecutor() as executor:
-        #surveyAndSystem = list(executor.map(
-                        # lambda q: systemDiagnosis(q), questionWithSurveyResult
-                        # ))
+        surveyAndSystem = list(executor.map(
+                        lambda q: systemDiagnosis(q), questionWithSurveyResult
+                        ))
         scoreSurveyAndSystem = run_accuracy_test(answers, surveyAndSystem)
         print("System Score With Survey: " + str(getScore(scoreSurveyAndSystem)))
     
