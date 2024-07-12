@@ -56,21 +56,18 @@ def run_accuracy_test(answers, responses):
     results = []
     for answer, response in zip(answers, responses):
         system_prompt = f"""Respond with only Accurate or Inaccurate"""
-        user_prompt = f"""Given {answer} is the correct diagnosis for the user. Does the response mention 
-            the correct or simular diagnosis? Respond accurate or inaccurate.
-            Compared to the answer, determine if the response is accurate or 
-            inaccurate. An example of a correct but not exact answer would be if Invasive lobular carcinoma is 
-            the correct diagnosis and the response mentions breast cancer.
-            Respond only with accurate or inaccurate. Do not explain your 
-            reasoning. The response is accurate if the correct diagnosis is provided anywhere
-            in the answer.
+        user_prompt = f"""Given {answer} is the correct diagnosis. Does the response 
+        below mention the disease or an adjacent disease anywhere in the response? Explain your 
+        reasoning and then respond with accurate or inaccurate. An example of an adjacent answer that 
+        would be accurate is if the correct diagnosis is breast cancer but the response mentions 
+        invasive lobular carcinoma. A correct answer can be provided anywhere in the response.  
             {response}"""
         result = askGipity(system_prompt, user_prompt)
         results.append(result)
     return results
 
 def getScore(accuracyResults):
-    totalScore = sum(1 for result in accuracyResults if result == "Accurate")
+    totalScore = sum(1 for result in accuracyResults if "accurate" in result.lower())
     return totalScore / len(accuracyResults)
 
 def questionWithSurvey(casualPhrasing, answers):
