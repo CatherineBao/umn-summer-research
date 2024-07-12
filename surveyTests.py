@@ -198,7 +198,7 @@ def convertToCasualTone(questions):
 
 def main():
     df = read_data()
-    diagnosisSet = list(get_random(20, extract_column(df, "question"), extract_column(df, "answer")))
+    diagnosisSet = list(get_random(100, extract_column(df, "question"), extract_column(df, "answer")))
     questions = [item[0] for item in diagnosisSet]
     answers = [item[1] for item in diagnosisSet]
 
