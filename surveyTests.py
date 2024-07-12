@@ -13,8 +13,8 @@ load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 openai.api_key = api_key
 
-def askGipity(system, user):
-    model = "gpt-3.5-turbo"
+def askGipity(system, user, model):
+    model = model
     prompt = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     response = openai.chat.completions.create(
         model=model,
@@ -34,7 +34,7 @@ def extract_column(df, column):
 
 def is_diagnosis_related(a, q):
     isDiagnosis = askGipity(f"""Is this a singular type of illness/disease (return true) (return false if it is a symptom, diagnosis process, body function/component (protein, antibody), medication, etc) explain""", 
-                            "Is this a singular type of illness/disease (return true) (return false if it is a symptom, diagnosis process, body function/component (protein, antibody), medication, etc) explain:  " + a)
+                            "Is this a singular type of illness/disease (return true) (return false if it is a symptom, diagnosis process, body function/component (protein, antibody), medication, etc) explain:  " + a, "gpt-3.5-turbo")
     return "true" in isDiagnosis.lower()
 
 def get_random(number, question, answer):
@@ -55,22 +55,19 @@ def get_random(number, question, answer):
 def run_accuracy_test(answers, responses):
     results = []
     for answer, response in zip(answers, responses):
-        system_prompt = f""" Respond in the following format: 
-        The response accurately mentions the correct diagnosis (Delusional Disorder) 
-        by discussing erotomania as a type of delusional disorder. Therefore, the response is accurate."""
+        system_prompt = f"""Return accurate or inaccuate with no additional commentary."""
         user_prompt = f"""Given {answer} is the correct diagnosis. Does the response 
-        below mention the disease or an adjacent disease anywhere in the response? Explain your 
-        reasoning and then respond with accurate or inaccurate. An example of an adjacent answer that 
-        would be accurate is if the correct diagnosis is breast cancer but the response mentions 
-        invasive lobular carcinoma. A correct answer can be provided anywhere in the response.  
-            {response}"""
-        result = askGipity(system_prompt, user_prompt)
+        below mention the disease anywhere in the response? An example of an accurate 
+        answer is if the correct diagnosis is invasive lobular carcinoma (a type of breast cancer) but the response mentions 
+        breast cancer. A correct answer can be provided anywhere in the response.  
+
+        Response: {response}"""
+        result = askGipity(system_prompt, user_prompt, "gpt-4o")
         results.append(result)
     return results
 
 def getScore(accuracyResults):
-    results = [askGipity("Return accurate or inaccurate in all lowercase to summarize the results with no other comments", result) for result in accuracyResults]
-    totalScore = sum(1 for result in results if "accurate" == result)
+    totalScore = sum(1 for result in accuracyResults if "Accurate" == result)
     return totalScore / len(accuracyResults)
 
 def questionWithSurvey(casualPhrasing, answers):
@@ -101,7 +98,7 @@ def questionWithSurvey(casualPhrasing, answers):
             Ask about basic personal information such as age, gender, weight, and race if relevant.
             Don't ask for information the user has already provided. 
         """, 
-    question) for question in casualPhrasing]
+    question, "gpt-3.5-turbo") for question in casualPhrasing]
 
     surveyAnswers = [askGipity(
         f"""Answer the survey using commong symptoms of {answer}. Do not include details that you wouldn't know without visitng a doctor. Use first person.
@@ -120,7 +117,7 @@ def questionWithSurvey(casualPhrasing, answers):
         Is there any pus forming around or oozing from the wound?: No
         Do you have swollen lymph nodes in the neck, armpit, or groin?: No
         Do you have a fever or other new developments to note?: No
-        """, question) for question, answer in zip(surveyQuestions, answers)]
+        """, question, "gpt-3.5-turbo") for question, answer in zip(surveyQuestions, answers)]
     
     return [question + survey for question, survey in zip(casualPhrasing, surveyAnswers)]
 
@@ -183,7 +180,7 @@ def systemDiagnosis(question):
         For more information on diabetes and wound healing, you can visit the American Diabetes Association website: https:/ \n
         Do you have any additional questions about your condition?
         """
-    return askGipity(systemMessage, question)
+    return askGipity(systemMessage, question, "gpt-3.5-turbo")
 
 def convertToCasualTone(questions):
         reddit_example_1 = "5 month old male, approx 16lbs. Possible milk allergy and GERD. Waiting on an allergist appointment in early July. Last night my 5 month old was asleep next to me in the bed around 8p, suddenly he started bringing his legs up to belly and arms perpendicular to body in like spams with 1-2 second pauses between each spasm. It last maybe 5-6 spasms and then he woke with hiccups immediately after stopping the spasms. He was acting normal afterwards. I messaged his pedi but haven’t heard back yet. I then was rocking him to sleep approx 10pm and he was doing this weird things with eyes and tightening his body for around 3 minutes before he finally fell asleep. I recorded it and have added link. I’m just not sure if this is being an overly anxious mom or if this is something that needs immediate attention. Thank you for all your help!"
@@ -194,11 +191,11 @@ def convertToCasualTone(questions):
                                 blood pressure, pulse, respirations, oxygen saturation). Rewrite the questions to a first person persepctive 
                                 simular to r/ docs on reddit at a middle school reading level. Write it simularily to these examples: First example:  
                                 {reddit_example_1} Second example: {reddit_example_2} Third example: {reddit_example_3}"""
-                                , q) for q in questions]
+                                , q, "gpt-3.5-turbo") for q in questions]
 
         casualPhrasingReprocessing = [askGipity(f"""
                                     Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message.
-                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible and rewrite at a middle school reading level." + q) for q in casualPhrasing]
+                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible and rewrite at a middle school reading level." + q, "gpt-3.5-turbo") for q in casualPhrasing]
         print("All questions have successfully converted to casual phrasing!")
         return casualPhrasingReprocessing
 
@@ -248,14 +245,14 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         #defaultAnswer = list(executor.map(
-                        # lambda q: askGipity("Address the inquiry provided by the user", q), questions
+                        # lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questions
                         # ))
         scoreDefult = run_accuracy_test(answers, defaultAnswer)
         print("Default Score: " + str(getScore(scoreDefult)))
 
     with ThreadPoolExecutor() as executor:
         #originalAnswer = list(executor.map(
-                        # lambda q: askGipity("Address the inquiry provided by the user", q), casualTone
+                        # lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), casualTone
                         # ))
         scoreOG = run_accuracy_test(answers, originalAnswer)
         print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
@@ -270,7 +267,7 @@ def main():
 
     with ThreadPoolExecutor() as executor:
         #answerWithSurvey = list(executor.map(
-                        # lambda q: askGipity("Address the inquiry provided by the user", q), questionWithSurveyResult
+                        # lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questionWithSurveyResult
                         # ))
         scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
         print("Original Score With Survey: " + str(getScore(scoreSurvey)))
