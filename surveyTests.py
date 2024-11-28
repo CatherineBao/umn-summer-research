@@ -34,20 +34,19 @@ def extract_column(df, column):
 
 def is_diagnosis_related(a, q):
     isDiagnosis = askGipity(f"""Is this a singular type of illness/disease (return true) (return false if it is a symptom, diagnosis process, body function/component (protein, antibody), medication, etc) explain""", 
-                            "Is this a singular type of illness/disease (return true) (return false if it is a symptom, diagnosis process, body function/component (protein, antibody), medication, etc) explain:  " + a, "gpt-3.5-turbo")
+                            "Is this a singular type of illness/disease (return true) (return false if it is a symptom, diagnosis process, body function/component (protein, antibody), medication, etc) explain:  " + a, "gpt-4o-mini")
     return "true" in isDiagnosis.lower()
 
-def get_random(number, question, answer):
-    random.seed(45)
+def get_random(number, question, answer, options):
+    random.seed(46)
     valid_pairs = []
     indices = list(range(len(question)))
 
     while len(valid_pairs) < number:
         sampled_index = random.sample(indices, 1)[0]
-        q, a = question[sampled_index], answer[sampled_index]
+        q, a, o = question[sampled_index], answer[sampled_index], options[sampled_index]
         if is_diagnosis_related(a, q):
-            valid_pairs.append((q, a))
-            print(len(valid_pairs))
+            valid_pairs.append((q, a, o))
         indices.remove(sampled_index)
 
     return valid_pairs
@@ -60,7 +59,7 @@ def run_accuracy_test(answers, responses):
                     A vague answer is incorrect. 
                     A correct answer can be provided anywhere in the response.  
                     Response: {response}"""
-        result = askGipity(system_prompt, user_prompt, "gpt-3.5-turbo")
+        result = askGipity(system_prompt, user_prompt, "gpt-4o-mini")
         results.append(result)
     return results
 
@@ -96,7 +95,7 @@ def questionWithSurvey(casualPhrasing, answers, questions):
             Ask about basic personal information such as age, gender, weight, and race if relevant.
             Don't ask for information the user has already provided. 
         """, 
-    question, "gpt-3.5-turbo") for question in casualPhrasing]
+    question, "gpt-4o-mini") for question in casualPhrasing]
 
     surveyAnswers = [askGipity(
         f"""Answer the survey using commong symptoms of {answer} using the information from {ogquestion}. Do not include details that you wouldn't know without visitng a doctor. Use first person.
@@ -115,7 +114,7 @@ def questionWithSurvey(casualPhrasing, answers, questions):
         Is there any pus forming around or oozing from the wound?: No
         Do you have swollen lymph nodes in the neck, armpit, or groin?: No
         Do you have a fever or other new developments to note?: No
-        """, question, "gpt-3.5-turbo") for question, answer, ogquestion in zip(surveyQuestions, answers, questions)]
+        """, question, "gpt-4o-mini") for question, answer, ogquestion in zip(surveyQuestions, answers, questions)]
     
     return [question + survey for question, survey in zip(casualPhrasing, surveyAnswers)]
 
@@ -176,7 +175,8 @@ def systemDiagnosis(question):
         \n
         Do you have any additional questions about your condition?
         """
-    return askGipity(systemMessage, question, "gpt-3.5-turbo")
+    return askGipity(systemMessage, question, "gpt-4o-mini")
+
 
 def convertToCasualTone(questions):
         reddit_example_1 = "5 month old male, approx 16lbs. Possible milk allergy and GERD. Waiting on an allergist appointment in early July. Last night my 5 month old was asleep next to me in the bed around 8p, suddenly he started bringing his legs up to belly and arms perpendicular to body in like spams with 1-2 second pauses between each spasm. It last maybe 5-6 spasms and then he woke with hiccups immediately after stopping the spasms. He was acting normal afterwards. I messaged his pedi but haven’t heard back yet. I then was rocking him to sleep approx 10pm and he was doing this weird things with eyes and tightening his body for around 3 minutes before he finally fell asleep. I recorded it and have added link. I’m just not sure if this is being an overly anxious mom or if this is something that needs immediate attention. Thank you for all your help!"
@@ -187,20 +187,38 @@ def convertToCasualTone(questions):
                                 blood pressure, pulse, respirations, oxygen saturation). Rewrite the questions to a first person persepctive 
                                 simular to r/ docs on reddit at a middle school reading level. Write it simularily to these examples: First example:  
                                 {reddit_example_1} Second example: {reddit_example_2} Third example: {reddit_example_3}"""
-                                , q, "gpt-3.5-turbo") for q in questions]
+                                , q, "gpt-4o-mini") for q in questions]
 
         casualPhrasingReprocessing = [askGipity(f"""
                                     Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message.
-                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible and rewrite at a middle school reading level." + q, "gpt-3.5-turbo") for q in casualPhrasing]
+                                """, "Remove all sentences from the message involving results from lab testing, blood pressure, pulse, respirations, etc from the message. Keep as many details as possible and rewrite at a middle school reading level." + q, "gpt-4o-mini") for q in casualPhrasing]
         print("All questions have successfully converted to casual phrasing!")
         return casualPhrasingReprocessing
 
+def askMultipleChoice(questions, options, answers):
+    formattedOptions = [
+    "\n".join([f"{key}) {value}".strip().rstrip('"') for key, value in dictionary.items()])
+    for dictionary in options]
+    askMultipleChoiceAnswer = [askGipity(f"You are a professional taking a multiple choice medical exam, only answer with the text answer with no additional comments.", f"{q} + {o}", "gpt-4o-mini") for q, o in zip(questions, formattedOptions)]
+    return scoreMultipleChoice(askMultipleChoiceAnswer, answers)
+
+def scoreMultipleChoice(askMultipleChoiceAnswer, answers):
+    score = 0
+    for amc, a in zip(askMultipleChoiceAnswer, answers):
+        print("Answer: " + amc + " Correct Answer: " + a)
+        if a in amc:
+            score += 1
+    return score/len(answers)
 
 def main():
     df = read_data()
-    diagnosisSet = list(get_random(100, extract_column(df, "question"), extract_column(df, "answer")))
+    diagnosisSet = list(get_random(5, extract_column(df, "question"), extract_column(df, "answer"), extract_column(df, "options")))
     questions = [item[0] for item in diagnosisSet]
     answers = [item[1] for item in diagnosisSet]
+    options = [item[2] for item in diagnosisSet]
+    returnValue = askMultipleChoice(questions, options, answers)
+    
+    print(returnValue)
 
     # data = {
     #     "question": questions,
@@ -234,66 +252,66 @@ def main():
     #         answerWithSurvey.append(row['surveyAnswer'])
     #         surveyAndSystem.append(row["surveyAndSystemAnswer"])
     
-    casualTone = convertToCasualTone(questions)
+    # casualTone = convertToCasualTone(questions)
 
-    questionWithSurveyResult = questionWithSurvey(casualTone, answers, questions)
-    print("All questions have successfully been processed with additional information!")
+    # questionWithSurveyResult = questionWithSurvey(casualTone, answers, questions)
+    # print("All questions have successfully been processed with additional information!")
 
-    with ThreadPoolExecutor() as executor:
-        defaultAnswer = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questions
-                        ))
-        scoreDefult = run_accuracy_test(answers, defaultAnswer)
-        print("Default Score: " + str(getScore(scoreDefult)))
+    # with ThreadPoolExecutor() as executor:
+    #     defaultAnswer = list(executor.map(
+    #                     lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-4o-mini"), questions
+    #                     ))
+    #     scoreDefult = run_accuracy_test(answers, defaultAnswer)
+    #     print("Default Score: " + str(getScore(scoreDefult)))
 
-    with ThreadPoolExecutor() as executor:
-        originalAnswer = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), casualTone
-                        ))
-        scoreOG = run_accuracy_test(answers, originalAnswer)
-        print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
+    # with ThreadPoolExecutor() as executor:
+    #     originalAnswer = list(executor.map(
+    #                     lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-4o-mini"), casualTone
+    #                     ))
+    #     scoreOG = run_accuracy_test(answers, originalAnswer)
+    #     print("Original Score With Casual Tone: " + str(getScore(scoreOG)))
     
 
-    with ThreadPoolExecutor() as executor:
-        ogWithSystem = list(executor.map(
-                        lambda q: systemDiagnosis(q), casualTone
-                        ))
-        scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
-        print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
+    # with ThreadPoolExecutor() as executor:
+    #     ogWithSystem = list(executor.map(
+    #                     lambda q: systemDiagnosis(q), casualTone
+    #                     ))
+    #     scoreOGWithSystem = run_accuracy_test(answers, ogWithSystem)
+    #     print("System Score With Casual Tone: " + str(getScore(scoreOGWithSystem)))
 
-    with ThreadPoolExecutor() as executor:
-        answerWithSurvey = list(executor.map(
-                        lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-3.5-turbo"), questionWithSurveyResult
-                        ))
-        scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
-        print("Original Score With Survey: " + str(getScore(scoreSurvey)))
+    # with ThreadPoolExecutor() as executor:
+    #     answerWithSurvey = list(executor.map(
+    #                     lambda q: askGipity("Address the inquiry provided by the user", q, "gpt-4o-mini"), questionWithSurveyResult
+    #                     ))
+    #     scoreSurvey = run_accuracy_test(answers, answerWithSurvey)
+    #     print("Original Score With Survey: " + str(getScore(scoreSurvey)))
 
-    with ThreadPoolExecutor() as executor:
-        surveyAndSystem = list(executor.map(
-                        lambda q: systemDiagnosis(q), questionWithSurveyResult
-                        ))
-        scoreSurveyAndSystem = run_accuracy_test(answers, surveyAndSystem)
-        print("System Score With Survey: " + str(getScore(scoreSurveyAndSystem)))
+    # with ThreadPoolExecutor() as executor:
+    #     surveyAndSystem = list(executor.map(
+    #                     lambda q: systemDiagnosis(q), questionWithSurveyResult
+    #                     ))
+    #     scoreSurveyAndSystem = run_accuracy_test(answers, surveyAndSystem)
+    #     print("System Score With Survey: " + str(getScore(scoreSurveyAndSystem)))
     
-    data = {
-        "question": questions,
-        "answer": answers,
-        "generalPublicQuestion": casualTone,
-        "surveyQuestions": questionWithSurveyResult,
-        "defaultAnswer": defaultAnswer,
-        "defaultScore": scoreDefult,
-        "generalPublicAnswerOG": originalAnswer,
-        "OGscore": scoreOG,
-        "ogWithSystemAnswer": ogWithSystem,
-        "scoreOGWithSystem": scoreOGWithSystem,
-        "surveyAnswer": answerWithSurvey,
-        "surveyScore": scoreSurvey,
-        "surveyAndSystemAnswer": surveyAndSystem,
-        "surveyAndSystemScore": scoreSurveyAndSystem,
-    }
+    # data = {
+    #     "question": questions,
+    #     "answer": answers,
+    #     "generalPublicQuestion": casualTone,
+    #     "surveyQuestions": questionWithSurveyResult,
+    #     "defaultAnswer": defaultAnswer,
+    #     "defaultScore": scoreDefult,
+    #     "generalPublicAnswerOG": originalAnswer,
+    #     "OGscore": scoreOG,
+    #     "ogWithSystemAnswer": ogWithSystem,
+    #     "scoreOGWithSystem": scoreOGWithSystem,
+    #     "surveyAnswer": answerWithSurvey,
+    #     "surveyScore": scoreSurvey,
+    #     "surveyAndSystemAnswer": surveyAndSystem,
+    #     "surveyAndSystemScore": scoreSurveyAndSystem,
+    # }
 
-    df_output = pd.DataFrame(data)
-    df_output.to_csv("testResults.csv", index=False)
+    # df_output = pd.DataFrame(data)
+    # df_output.to_csv("testResults.csv", index=False)
 
 if __name__ == "__main__":
 
